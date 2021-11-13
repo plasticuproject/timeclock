@@ -4,6 +4,7 @@ A CLI app that accepts start and end times from users
 for multiple days then calculates and prints the total
 time."""
 from typing import List, Tuple, Union
+from sys import exit as sysexit
 
 BOOLS: List[str] = ["0", "1"]
 
@@ -16,7 +17,7 @@ class FormatError(Exception):
     # # Actually need this to add custom message.
     def __init__(self, message: str = "Not a vaild time format") -> None:
         # Call the base class constructor with the parameters it needs.
-        super(FormatError, self).__init__(message)
+        super().__init__(message)
 
 
 class ChoiceError(Exception):
@@ -27,7 +28,7 @@ class ChoiceError(Exception):
     # # Actually need this to add custom message.
     def __init__(self, message: str = "Invalid choice") -> None:
         # Call the base class constructor with the parameters it needs.
-        super(ChoiceError, self).__init__(message)
+        super().__init__(message)
 
 
 def calc_time(time: Tuple[int, int], start_time: str, start_tod: bool,
@@ -50,14 +51,24 @@ def calc_time(time: Tuple[int, int], start_time: str, start_tod: bool,
         >>> add_time = calc_time((2, 17), "1015", False, "0230", True)
         >>> assert add_time == (6, 32)
     """
+    old_start: str
+    old_end: str
     hours: int
     minutes: int
     previous_hours: int = time[0]
     previous_minutes: int = time[1]
 
-    if start_time == "1200":  # Deal with new day hour rollover conversion.
+    # Deal with new day hour rollover conversion.
+    old_start, old_end = start_time, end_time
+    if start_time == "1200":
         start_time = "0000"
     if end_time == "1200" and end_tod is False:
+        end_time = "2400"
+    if old_start == "1200" or old_end == "1200" and start_tod == end_tod:
+        start_time = "00" + old_start[2:]
+        end_time = "00" + old_end[2:]
+    if old_start == old_end and start_tod == end_tod:
+        start_time = "0000"
         end_time = "2400"
 
     start_hours: int = int(start_time[:2])  # Split up hours and minutes
@@ -65,9 +76,10 @@ def calc_time(time: Tuple[int, int], start_time: str, start_tod: bool,
     end_hours: int = int(end_time[:2])
     end_minutes: int = int(end_time[2:])
 
-    if start_tod is True:  # Convert from 12 to 24 hour format.
+    # Convert from 12 to 24 hour format.
+    if start_tod is True and end_tod is False:
         start_hours += 12
-    if end_tod is True:
+    if end_tod is True and start_tod is False:
         end_hours += 12
 
     if start_hours > end_hours:  # Adjustment when end time is in a new day.
@@ -137,7 +149,7 @@ def format_time(time: str) -> str:
     else:
         raise FormatError  # If time string is > 4 characters.
 
-    if int(time) > 1200 or int(time[2:]) > 59:
+    if int(time[:2]) > 12 or int(time[2:]) > 59:
         raise FormatError  # If numbers cannot convert to 12 hour format.
 
     return time
@@ -264,4 +276,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print()
-        quit()
+        sysexit()

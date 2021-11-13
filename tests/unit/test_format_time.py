@@ -29,6 +29,8 @@ class TestFormatTime(unittest.TestCase):
 
         self.assertRaises(FormatError, format_time, "0960")
 
+        self.assertRaises(FormatError, format_time, "09660")
+
 
 if __name__ == '__main__':
     unittest.main()
